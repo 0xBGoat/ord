@@ -3,6 +3,7 @@ use {
   batch::ParentInfo,
   bitcoin::{
     bip32::{ChildNumber, DerivationPath, Xpriv, Fingerprint},
+    psbt::Psbt,
     secp256k1::Secp256k1,
   },
   bitcoincore_rpc::json::ImportDescriptors,
