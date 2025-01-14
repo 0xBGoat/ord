@@ -2,7 +2,7 @@ use {
   super::*,
   batch::ParentInfo,
   bitcoin::{
-    bip32::{ChildNumber, DerivationPath, Xpriv, FingerPrint},
+    bip32::{ChildNumber, DerivationPath, Xpriv, Fingerprint},
     secp256k1::Secp256k1,
   },
   bitcoincore_rpc::json::ImportDescriptors,
