@@ -18,7 +18,7 @@ jq_filter='select(.reveal[0:3] == $prefix) | { commit_hex, reveal_hex, reveal_tx
 
 while true; do
     # Store output but use process substitution to avoid subshell
-    output=$(./ord wallet --name pizzapets batch --fee-rate "$fee_rate" --commit-fee-rate "$commit_fee_rate" --batch batch.yaml --dry-run)
+    output=$(./ord wallet --name pizzapets --no-sync batch --fee-rate "$fee_rate" --commit-fee-rate "$commit_fee_rate" --batch batch.yaml --dry-run)
     
     if echo "$output" | jq -e --arg prefix "$prefix" "$jq_filter" >/dev/null; then
         echo -e "\nFound matching transaction after $counter attempts!"
