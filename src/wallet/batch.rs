@@ -10,6 +10,7 @@ use {
     taproot::{ControlBlock, LeafVersion, TapLeafHash, TaprootBuilder},
   },
   bitcoincore_rpc::bitcoincore_rpc_json::{ImportDescriptors, SignRawTransactionInput, Timestamp},
+  bitcoincore_rpc::RawTx,
   wallet::transaction_builder::Target,
 };
 
@@ -31,12 +32,12 @@ mod transactions;
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Output {
   pub commit: Txid,
-  pub commit_psbt: Option<String>,
+  pub commit_hex: Option<String>,
   pub inscriptions: Vec<InscriptionInfo>,
   pub parents: Vec<InscriptionId>,
   pub reveal: Txid,
   pub reveal_broadcast: bool,
-  pub reveal_psbt: Option<String>,
+  pub reveal_hex: Option<String>,
   pub rune: Option<RuneInfo>,
   pub total_fees: u64,
 }

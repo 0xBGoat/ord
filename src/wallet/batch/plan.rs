@@ -63,33 +63,6 @@ impl Plan {
       wallet.get_change_address()?,
     )?;
 
-    if self.dry_run {
-      let commit_psbt = wallet
-        .bitcoin_client()
-        .wallet_process_psbt(
-          &base64_encode(
-            &Psbt::from_unsigned_tx(Self::remove_witnesses(commit_tx.clone()))?.serialize(),
-          ),
-          Some(false),
-          None,
-          None,
-        )?
-        .psbt;
-
-      let reveal_psbt = Psbt::from_unsigned_tx(Self::remove_witnesses(reveal_tx.clone()))?;
-
-      return Ok(Some(Box::new(self.output(
-        commit_tx.compute_txid(),
-        Some(commit_psbt),
-        reveal_tx.compute_txid(),
-        false,
-        Some(base64_encode(&reveal_psbt.serialize())),
-        total_fees,
-        self.inscriptions.clone(),
-        rune,
-      ))));
-    }
-
     let signed_commit_tx = wallet
       .bitcoin_client()
       .sign_raw_transaction_with_wallet(&commit_tx, None, None)?
@@ -120,6 +93,19 @@ impl Plan {
     );
 
     let signed_reveal_tx = result.hex;
+
+    if self.dry_run {
+      return Ok(Some(Box::new(self.output(
+        commit_tx.txid(),
+        Some(signed_commit_tx.raw_hex()),
+        reveal_tx.txid(),
+        false,
+        Some(signed_reveal_tx.raw_hex()),
+        total_fees,
+        self.inscriptions.clone(),
+        rune,
+      ))));
+    }
 
     if !self.no_backup {
       Self::backup_recovery_key(wallet, recovery_key_pair)?;
@@ -194,10 +180,10 @@ impl Plan {
   fn output(
     &self,
     commit: Txid,
-    commit_psbt: Option<String>,
+    commit_hex: Option<String>,
     reveal: Txid,
     reveal_broadcast: bool,
-    reveal_psbt: Option<String>,
+    reveal_hex: Option<String>,
     total_fees: u64,
     inscriptions: Vec<Inscription>,
     rune: Option<RuneInfo>,
@@ -241,12 +227,12 @@ impl Plan {
 
     Output {
       commit,
-      commit_psbt,
+      commit_hex,
       inscriptions: inscriptions_output,
       parents: self.parent_info.iter().map(|info| info.id).collect(),
       reveal,
       reveal_broadcast,
-      reveal_psbt,
+      reveal_hex,
       rune,
       total_fees,
     }
