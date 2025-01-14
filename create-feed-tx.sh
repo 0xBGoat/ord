@@ -13,23 +13,22 @@ commit_fee_rate=$(echo "$fee_rate + 0.1" | bc)
 echo "Searching for transaction with prefix: $prefix (fee rate: $fee_rate, commit fee rate: $commit_fee_rate)"
 
 counter=0
+# Pre-create the JQ filter once
+jq_filter='select(.reveal[0:3] == $prefix) | { commit_hex, reveal_hex, reveal_tx: .reveal }'
 
 while true; do
-    # Run the ord command once and capture its output
+    # Store output but use process substitution to avoid subshell
     output=$(./ord wallet --name pizzapets batch --fee-rate "$fee_rate" --commit-fee-rate "$commit_fee_rate" --batch batch.yaml --dry-run)
     
-    # Check if this output has our desired prefix
-    if echo "$output" | jq -e --arg prefix "$prefix" '
-        select(.reveal[0:3] == $prefix) | 
-        { commit_hex, reveal_hex, reveal_tx: .reveal }
-    ' >/dev/null; then
+    if echo "$output" | jq -e --arg prefix "$prefix" "$jq_filter" >/dev/null; then
         echo -e "\nFound matching transaction after $counter attempts!"
-        echo "$output" | jq -r --arg prefix "$prefix" 'select(.reveal[0:3] == $prefix) | { commit_hex, reveal_hex, reveal_tx: .reveal }'
+        echo "$output" | jq -r --arg prefix "$prefix" "$jq_filter"
         exit 0
     fi
     
     counter=$((counter + 1))
-    if [[ $((counter % 10)) -eq 0 ]]; then
-        echo -n "." # Progress indicator every 10 attempts
+    # Reduce I/O operations by printing less frequently
+    if [[ $((counter % 100)) -eq 0 ]]; then
+        echo -n "." >&2
     fi
 done 
