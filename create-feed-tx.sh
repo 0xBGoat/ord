@@ -15,28 +15,21 @@ echo "Searching for transaction with prefix: $prefix (fee rate: $fee_rate, commi
 counter=0
 
 while true; do
-    # Run the ord command and process with a single jq command
-    result=$(./ord wallet --name pizzapets batch --fee-rate "$fee_rate" --commit-fee-rate "$commit_fee_rate" --batch batch.yaml --dry-run | \
-    jq -r --arg prefix "$prefix" '
-        . as $full |
-        if (.reveal[0:3] == $prefix) then
-            {
-                found: true,
-                result: { commit_hex: .commit_hex, reveal_hex: .reveal_hex, reveal_tx: .reveal }
-            }
-        else
-            { found: false }
-        end
-    ')
+    # Run the ord command once and capture its output
+    output=$(./ord wallet --name pizzapets batch --fee-rate "$fee_rate" --commit-fee-rate "$commit_fee_rate" --batch batch.yaml --dry-run)
+    
+    # Check if this output has our desired prefix
+    if echo "$output" | jq -e --arg prefix "$prefix" '
+        select(.reveal[0:3] == $prefix) | 
+        { commit_hex, reveal_hex, reveal_tx: .reveal }
+    ' >/dev/null; then
+        echo -e "\nFound matching transaction after $counter attempts!"
+        echo "$output" | jq -r --arg prefix "$prefix" 'select(.reveal[0:3] == $prefix) | { commit_hex, reveal_hex, reveal_tx: .reveal }'
+        exit 0
+    fi
     
     counter=$((counter + 1))
     if [[ $((counter % 10)) -eq 0 ]]; then
         echo -n "." # Progress indicator every 10 attempts
-    fi
-    
-    if echo "$result" | jq -e '.found == true' >/dev/null; then
-        echo -e "\nFound matching transaction after $counter attempts!"
-        echo "$result" | jq -r '.result'
-        exit 0
     fi
 done 
